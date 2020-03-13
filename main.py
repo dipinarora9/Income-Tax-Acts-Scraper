@@ -2,18 +2,24 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 import time
 import keyboard
-import json
+import json, smtplib, os
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-# todo: add your path
-driver = webdriver.Firefox(executable_path=r"path-to-geckodriver.exe")
-
+driver = webdriver.Firefox(
+    executable_path=r"F:\Projects\GITHUB\Income-Tax-Acts-Scraper\geckodriver.exe"
+)
 
 driver.get("https://www.incometaxindia.gov.in/pages/acts/income-tax-act.aspx")
+gmail_user = os.environ.get("emailId")
+gmail_password = os.environ.get("password")
 
-
+'''for hindi'''
+# bar = driver.find_element_by_class_name("color-blind")
+# bar = bar.find_elements_by_tag_name("li")
+# hindi = bar[1].find_element_by_tag_name("a")
+# hindi.click()
 radio = driver.find_element_by_class_name("noBold")
 
 chapter = radio.find_elements_by_tag_name("td")
@@ -27,6 +33,8 @@ pageCount = 0
 
 data = dict()
 sec = dict()
+
+# time.sleep(20)
 
 
 def remover(string):
@@ -96,6 +104,7 @@ try:
         if len(results) - 1 != chapterIndex:
             time.sleep(2)
             results = driver.find_elements_by_class_name("search-result-inner")
+
         element = WebDriverWait(results[chapterIndex], 10).until(
             EC.visibility_of_element_located((By.TAG_NAME, "li"))
         )
@@ -162,14 +171,26 @@ try:
         keyboard.press_and_release("shift + alt + c")
 
 except Exception as e:
-    print(e)
+    print(e.with_traceback(None))
     print(
         "Chapter Index - %d\nSection index - %d\nPage Number - %d"
         % (chapterIndex, sectionIndex, pageCount + 1)
     )
+    if e is not KeyboardInterrupt:
+        to = ["dipinarora401@gmail.com"]
+        server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
+        server.ehlo()
+        server.login(gmail_user, gmail_password)
+        server.sendmail(
+            gmail_user,
+            to,
+            "Error\n%s\nChapter Index - %d\nSection index - %d\nPage Number - %d"
+            % (e, chapterIndex, sectionIndex, pageCount + 1),
+        )
+        server.close()
 
 finally:
     final = json.dumps(data)
-    file = open("next.json", "w")
+    file = open("HINDInew.json", "w")
     file.write(final)
     file.close()
